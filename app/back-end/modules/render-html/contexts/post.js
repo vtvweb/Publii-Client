@@ -293,11 +293,14 @@ class RendererContextPost extends RendererContext {
 
         // Get related posts ordering
         let ordering = ' subquery.id DESC ';
+        let innerOrdering = ' p.id DESC ';
 
         if (this.siteConfig.advanced.relatedPostsOrder === 'id-asc') {
             ordering = ' subquery.id ASC ';
+            innerOrdering = ' p.id ASC ';
         } else if (this.siteConfig.advanced.relatedPostsOrder === 'random') {
             ordering = ' RANDOM() ';
+            innerOrdering = ' RANDOM() ';
         }
 
         // Use second query
@@ -351,7 +354,7 @@ class RendererContextPost extends RendererContext {
                     GROUP BY
                         p.id
                     ORDER BY
-                        priority ASC
+                        priority ASC, ${innerOrdering}
                     LIMIT @relatedPostsNumber
                 ) AS subquery
             ORDER BY
