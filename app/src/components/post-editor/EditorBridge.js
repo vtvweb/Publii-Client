@@ -963,7 +963,7 @@ class EditorBridge {
         const updatedGallery = gallery.cloneNode(false);
 
         if (response.galleryType === 'slideshow') {
-            updatedGallery.className = 'gallery vtv-slideshow gallery--slideshow';
+            updatedGallery.className = 'vtv-slideshow';
             updatedGallery.setAttribute('data-gallery-type', 'slideshow');
             updatedGallery.removeAttribute('data-columns');
             updatedGallery.setAttribute('contenteditable', 'false');

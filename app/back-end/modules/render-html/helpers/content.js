@@ -221,7 +221,7 @@ class ContentHelper {
         text = text.replace(/<br.*?>/gi, ' '); // Replace BR tags with spaces
         text = text.replace(/<publii-non-amp>[\s\S]*?<\/publii-non-amp>/gmi, ''); // Remove conditional content
         text = text.replace(/<publii-amp>[\s\S]*?<\/publii-amp>/gmi, ''); // Remove conditional content
-        text = text.replace(/<div class="[^"]*?(?:vtv-slideshow|gallery--slideshow)[^"]*?"[\s\S]*?<\/div>\s*<\/div>/gmi, ''); // Remove slideshows
+        text = text.replace(/<div class="[^"]*?(?:vtv-slideshow|gallery--slideshow)[^"]*?"[\s\S]*?<\/div>(?:\s*<\/div>)+/gmi, ''); // Remove slideshows
         text = text.replace(/<(?:.|\s)*?>/g, ''); // Remove HTML tags
         text = text.replace(/\s{2,}/g, ' '); // Shrink multiple spaces into one space
         text = text.split(' '); // Create an array of words

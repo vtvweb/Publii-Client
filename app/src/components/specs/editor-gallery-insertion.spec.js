@@ -184,11 +184,10 @@ describe('Gallery popup opening', function () {
         assert.ok(output.html.includes('vtv-slideshow-prev'));
         assert.ok(output.html.includes('vtv-slideshow-next'));
         assert.ok(output.html.includes('vtv-slideshow-badge'));
-        assert.ok(output.html.includes('data-slide="1" data-total="2"'));
+        assert.ok(output.html.includes('1 / 2'));
         // Verify NO ❮ or ❯ text inside navigation tags (excerpts safety)
-        assert.ok(!output.html.includes('>❮<'));
-        assert.ok(!output.html.includes('>❯<'));
-        // Verify NO <svg> tags inside anchors (HugeRTE valid_children schema safety)
-        assert.ok(!output.html.includes('<svg'));
+        assert.ok(!output.html.includes('❮'));
+        assert.ok(!output.html.includes('❯'));
+        assert.ok(output.html.includes('<svg'));
     });
 });

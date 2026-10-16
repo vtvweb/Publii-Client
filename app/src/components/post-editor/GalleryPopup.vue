@@ -434,13 +434,13 @@ export default {
                     let nextTarget = `${idPrefix}-${nextNum}`;
 
                     let prevBtn = total > 1
-                        ? `  <a href="#${prevTarget}" class="vtv-slideshow-nav vtv-slideshow-prev" aria-label="Anterior"></a>\n`
+                        ? `  <a href="#${prevTarget}" class="vtv-slideshow-nav vtv-slideshow-prev" aria-label="Anterior" style="position: absolute; top: 50%; left: 12px; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: #fff; text-decoration: none; padding: 10px 14px; border-radius: 4px; z-index: 10; line-height: 1; display: inline-flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg></a>\n`
                         : '';
                     let nextBtn = total > 1
-                        ? `  <a href="#${nextTarget}" class="vtv-slideshow-nav vtv-slideshow-next" aria-label="Siguiente"></a>\n`
+                        ? `  <a href="#${nextTarget}" class="vtv-slideshow-nav vtv-slideshow-next" aria-label="Siguiente" style="position: absolute; top: 50%; right: 12px; transform: translateY(-50%); background: rgba(0,0,0,0.65); color: #fff; text-decoration: none; padding: 10px 14px; border-radius: 4px; z-index: 10; line-height: 1; display: inline-flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></a>\n`
                         : '';
                     let badge = (this.showBadge && total > 1)
-                        ? `  <span class="vtv-slideshow-badge" aria-hidden="true" data-slide="${slideNum}" data-total="${total}"></span>\n`
+                        ? `  <span class="vtv-slideshow-badge" aria-hidden="true" style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.65); color: #fff; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 4px; z-index: 10; letter-spacing: 0.5px;">${slideNum} / ${total}</span>\n`
                         : '';
                     let caption = img.caption
                         ? `  <div class="vtv-slideshow-caption">${img.caption}</div>\n`
