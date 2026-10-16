@@ -1,0 +1,132 @@
+name: Build installers
+
+# Builds the Publii installers for Windows, macOS (ARM + Intel) and Linux,
+# uploads them as workflow artifacts, and attaches them to a draft GitHub
+# release when a v* tag is pushed.
+#
+#   git tag v0.48.2 && git push origin v0.48.2   # -> draft release with installers
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write # release job needs this to create the draft release
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    # Windows runners default to PowerShell, which cannot execute the repo's
+    # npm scripts (they use ./node_modules/.bin/... paths). bash exists on
+    # all GitHub-hosted runners.
+    shell: bash
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+            package-cmd: npm run packager:win
+            artifacts: |
+              dist/*.exe
+              dist/*.blockmap
+              dist/*.yml
+          - name: macos-arm64
+            os: macos-latest
+            package-cmd: npm run packager:mac-m
+            artifacts: |
+              dist/*.dmg
+              dist/*.zip
+              dist/*.blockmap
+              dist/*.yml
+          - name: macos-intel
+            os: macos-latest
+            # No Intel-hosted macOS runners remain (macos-13 retired Dec 2025),
+            # so the Intel build is cross-compiled on Apple Silicon via the
+            # repo's mac-intel script plus an explicit --x64 flag.
+            package-cmd: npm run packager:mac-intel -- --x64
+            artifacts: |
+              dist/*.dmg
+              dist/*.zip
+              dist/*.blockmap
+              dist/*.yml
+          - name: linux-x64
+            os: ubuntu-latest
+            package-cmd: npm run packager:linux
+            artifacts: |
+              dist/*.AppImage
+              dist/*.deb
+              dist/*.rpm
+              dist/*.yml
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            app/package-lock.json
+
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y rpm
+
+      - name: Install dependencies (root)
+        run: npm ci --no-audit --no-fund
+
+      - name: Install dependencies (app)
+        working-directory: app
+        run: npm ci --no-audit --no-fund
+
+      - name: Build frontend
+        run: npm run prod
+
+      - name: Package (${{ matrix.name }})
+        run: ${{ matrix.package-cmd }}
+        # To ship signed/notarized builds, add the secrets below and uncomment:
+        # env:
+        #   CSC_LINK: ${{ secrets.CSC_LINK }}
+        #   CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        #   APPLE_ID: ${{ secrets.APPLE_ID }}
+        #   APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        #   APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v7
+        with:
+          name: Publii-${{ matrix.name }}
+          path: ${{ matrix.artifacts }}
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all installers
+        uses: actions/download-artifact@v8
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: release-assets/**
+          draft: true # flip to published in the UI after a smoke test
+          generate_release_notes: true
