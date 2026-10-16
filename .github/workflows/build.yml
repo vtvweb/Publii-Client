@@ -34,14 +34,14 @@ jobs:
         include:
           - name: windows-x64
             os: windows-latest
-            package-cmd: npm run packager:win
+            package-cmd: npm run packager:win -- --publish never
             artifacts: |
               dist/*.exe
               dist/*.blockmap
               dist/*.yml
           - name: macos-arm64
             os: macos-latest
-            package-cmd: npm run packager:mac-m
+            package-cmd: npm run packager:mac-m -- --publish never
             artifacts: |
               dist/*.dmg
               dist/*.zip
@@ -52,7 +52,7 @@ jobs:
             # No Intel-hosted macOS runners remain (macos-13 retired Dec 2025),
             # so the Intel build is cross-compiled on Apple Silicon via the
             # repo's mac-intel script plus an explicit --x64 flag.
-            package-cmd: npm run packager:mac-intel -- --x64
+            package-cmd: npm run packager:mac-intel -- --x64 --publish never
             artifacts: |
               dist/*.dmg
               dist/*.zip
@@ -60,7 +60,7 @@ jobs:
               dist/*.yml
           - name: linux-x64
             os: ubuntu-latest
-            package-cmd: npm run packager:linux
+            package-cmd: npm run packager:linux -- --publish never
             artifacts: |
               dist/*.AppImage
               dist/*.deb
@@ -92,9 +92,15 @@ jobs:
         working-directory: app
         run: npm ci --no-audit --no-fund
 
+      # NOTE: invoked directly instead of `npm run prod` because that script
+      # uses a ./node_modules/.bin/... path, which npm executes via cmd.exe
+      # on Windows runners ("'node_modules' is not recognized...").
       - name: Build frontend
-        run: npm run prod
+        run: node node_modules/webpack/bin/webpack.js --node-env=production --mode=production
 
+      # --publish never: electron-builder implicitly publishes when it detects
+      # CI and then fails without GH_TOKEN. Publishing is handled by the
+      # release job below instead.
       - name: Package (${{ matrix.name }})
         run: ${{ matrix.package-cmd }}
         # To ship signed/notarized builds, add the secrets below and uncomment:
