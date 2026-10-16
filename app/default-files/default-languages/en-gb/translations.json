@@ -540,12 +540,16 @@
         "removeImage": "Remove image",
         "sevenColumns": "7 columns",
         "sixColumns": "6 columns",
+        "showBadge": "Show slide counter",
+        "slideshow": "Slideshow (Carousel)",
         "threeColumns": "3 columns",
         "twoColumns": "2 columns",
+        "type": "Type",
         "uploading": "Uploading",
         "wide": "Wide",
         "wideImage": "Wide image",
-        "yourGalleryIsEmpty": "Your gallery is empty"
+        "yourGalleryIsEmpty": "Your gallery is empty",
+        "grid": "Grid"
     },
     "langs": {
         "addLanguageSuccessMessage": "Language has been added",

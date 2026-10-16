@@ -94,6 +94,16 @@
 
             <div class="gallery-popup-config">
                 <label>
+                    {{ $t('image.type') || 'Type' }}:
+                    <select
+                        v-model="galleryType"
+                        class="gallery-popup-config-cols">
+                        <option value="grid">{{ $t('image.grid') || 'Grid' }}</option>
+                        <option value="slideshow">{{ $t('image.slideshow') || 'Slideshow (Carousel)' }}</option>
+                    </select>
+                </label>
+
+                <label v-if="galleryType === 'grid'">
                     {{ $t('image.layout') }}:
                     <select
                         v-model="columns"
@@ -107,6 +117,14 @@
                         <option :value="7">{{ $t('image.sevenColumns') }}</option>
                         <option :value="8">{{ $t('image.eightColumns') }}</option>
                     </select>
+                </label>
+
+                <label v-if="galleryType === 'slideshow'" class="gallery-popup-config-badge-label">
+                    <input
+                        type="checkbox"
+                        v-model="showBadge"
+                        class="gallery-popup-config-checkbox" />
+                    {{ $t('image.showBadge') || 'Show counter' }}
                 </label>
 
                 <label>
@@ -174,6 +192,8 @@ export default {
             isHovered: false,
             images: [],
             columns: 3,
+            galleryType: 'grid',
+            showBadge: true,
             layout: '',
             uploadProgress: 0,
             uploadMessage: '',
@@ -194,6 +214,8 @@ export default {
             this.isHovered = false;
             this.images = [];
             this.columns = 3;
+            this.galleryType = 'grid';
+            this.showBadge = true;
             this.imagesToUpload = 0;
             this.parseInputElement();
 
@@ -312,7 +334,6 @@ export default {
 
         parseInputElement () {
             let galleryHandler = $(this.galleryElement);
-            let images = $(galleryHandler).find('.gallery__item');
             this.columns = galleryHandler.attr('data-columns') || 3;
             this.layout = '';
 
@@ -321,6 +342,37 @@ export default {
             } else if (galleryHandler.hasClass('gallery-wrapper--full')) {
                 this.layout = 'gallery-wrapper--full';
             }
+
+            let isSlideshow = galleryHandler.hasClass('vtv-slideshow') ||
+                              galleryHandler.hasClass('gallery--slideshow') ||
+                              galleryHandler.attr('data-gallery-type') === 'slideshow' ||
+                              galleryHandler.find('.vtv-slideshow-slide').length > 0;
+
+            if (isSlideshow) {
+                this.galleryType = 'slideshow';
+                this.showBadge = galleryHandler.find('.vtv-slideshow-badge').length > 0;
+                let slides = galleryHandler.find('.vtv-slideshow-slide');
+
+                for (let slide of slides) {
+                    slide = $(slide);
+                    let img = slide.find('img');
+                    let caption = slide.find('.vtv-slideshow-caption').length ? slide.find('.vtv-slideshow-caption').html() : (slide.find('figcaption').length ? slide.find('figcaption').html() : '');
+
+                    this.images.push({
+                        fullImagePath: img.attr('src') || '',
+                        thumbnailPath: img.attr('src') || '',
+                        thumbnailHeight: img.attr('height') || '',
+                        thumbnailWidth: img.attr('width') || '',
+                        alt: img.attr('alt') || '',
+                        caption: caption,
+                        dimensions: ''
+                    });
+                }
+                return;
+            }
+
+            this.galleryType = 'grid';
+            let images = $(galleryHandler).find('.gallery__item');
 
             if (!images.length) {
                 return;
@@ -368,6 +420,53 @@ export default {
         },
 
         generateOutput() {
+            if (this.galleryType === 'slideshow') {
+                let total = this.images.length;
+                let idPrefix = 'vtv-slide-' + Math.random().toString(36).substring(2, 8);
+                let slides = '';
+
+                for (let i = 0; i < total; i++) {
+                    let img = this.images[i];
+                    let slideNum = i + 1;
+                    let prevNum = i === 0 ? total : i;
+                    let nextNum = i === total - 1 ? 1 : i + 2;
+                    let prevTarget = `${idPrefix}-${prevNum}`;
+                    let nextTarget = `${idPrefix}-${nextNum}`;
+
+                    let prevBtn = total > 1
+                        ? `  <a href="#${prevTarget}" class="vtv-slideshow-nav vtv-slideshow-prev" aria-label="Anterior"></a>\n`
+                        : '';
+                    let nextBtn = total > 1
+                        ? `  <a href="#${nextTarget}" class="vtv-slideshow-nav vtv-slideshow-next" aria-label="Siguiente"></a>\n`
+                        : '';
+                    let badge = (this.showBadge && total > 1)
+                        ? `  <span class="vtv-slideshow-badge" aria-hidden="true" data-slide="${slideNum}" data-total="${total}"></span>\n`
+                        : '';
+                    let caption = img.caption
+                        ? `  <div class="vtv-slideshow-caption">${img.caption}</div>\n`
+                        : '';
+
+                    let imgAlt = img.alt ? img.alt.replace(/"/g, '&quot;') : '';
+                    let imgAttrs = `src="${img.thumbnailPath || img.fullImagePath}" alt="${imgAlt}"`;
+                    if (img.thumbnailWidth) imgAttrs += ` width="${img.thumbnailWidth}"`;
+                    if (img.thumbnailHeight) imgAttrs += ` height="${img.thumbnailHeight}"`;
+
+                    slides += `<!-- Slide ${slideNum} -->\n<div id="${idPrefix}-${slideNum}" class="vtv-slideshow-slide" style="flex: 0 0 100%; width: 100%; scroll-snap-align: start; position: relative;">\n  <img style="width: 100%; height: auto; display: block; margin: 0; object-fit: contain;" ${imgAttrs}>\n${prevBtn}${nextBtn}${badge}${caption}</div>\n`;
+                }
+
+                let output = total
+                    ? `<div class="vtv-slideshow-track" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none;">\n${slides}</div>`
+                    : '&nbsp;';
+
+                return {
+                    gallery: this.galleryElement,
+                    html: output,
+                    galleryType: 'slideshow',
+                    columns: 1,
+                    layout: this.layout
+                };
+            }
+
             let output = '';
 
             for(let i = 0; i < this.images.length; i++) {
@@ -403,6 +502,7 @@ export default {
             return {
                 gallery: this.galleryElement,
                 html: output,
+                galleryType: 'grid',
                 columns: this.columns,
                 layout: this.layout
             };
@@ -473,6 +573,11 @@ h1 {
         align-items: center;
         display: flex;
         margin-right: 30px;
+    }
+
+    .gallery-popup-config-checkbox {
+        margin: 0 8px 0 0;
+        cursor: pointer;
     }
 
     select {

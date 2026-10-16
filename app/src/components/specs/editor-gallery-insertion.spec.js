@@ -159,4 +159,36 @@ describe('Gallery popup opening', function () {
             assert.equal(pickerCalls, autoSelectFiles === false ? 0 : 1);
         });
     }
+
+    it('generates clean slideshow output with CSS pseudo-element navigation and no inline text/svg', function () {
+        const context = {
+            module: { exports: {} },
+            UploadProgress: {},
+            Draggable: {}
+        };
+        vm.runInNewContext(popupSource, context);
+        const component = context.module.exports;
+        const popup = {
+            ...component.data(),
+            galleryType: 'slideshow',
+            showBadge: true,
+            images: [
+                { thumbnailPath: 'img1.webp', fullImagePath: 'img1.webp', alt: 'Slide 1', caption: 'Caption 1' },
+                { thumbnailPath: 'img2.webp', fullImagePath: 'img2.webp', alt: 'Slide 2', caption: '' }
+            ]
+        };
+        const output = component.methods.generateOutput.call(popup);
+        assert.equal(output.galleryType, 'slideshow');
+        assert.ok(output.html.includes('vtv-slideshow-track'));
+        assert.ok(output.html.includes('vtv-slideshow-slide'));
+        assert.ok(output.html.includes('vtv-slideshow-prev'));
+        assert.ok(output.html.includes('vtv-slideshow-next'));
+        assert.ok(output.html.includes('vtv-slideshow-badge'));
+        assert.ok(output.html.includes('data-slide="1" data-total="2"'));
+        // Verify NO ❮ or ❯ text inside navigation tags (excerpts safety)
+        assert.ok(!output.html.includes('>❮<'));
+        assert.ok(!output.html.includes('>❯<'));
+        // Verify NO <svg> tags inside anchors (HugeRTE valid_children schema safety)
+        assert.ok(!output.html.includes('<svg'));
+    });
 });
